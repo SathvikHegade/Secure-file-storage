@@ -7,16 +7,13 @@
     "start": "node server.js",
     "dev": "nodemon server.js"
   },
-  "keywords": [
-    "notepad",
-    "dontpad",
-    "file-upload"
-  ],
-  "author": "",
+  "keywords": ["notepad", "dontpad", "file-upload"],
+  "author": "T S Sathvik Hegade",
   "license": "MIT",
   "dependencies": {
     "express": "^4.18.2",
-    "multer": "^1.4.5-lts.1"
+    "multer": "^1.4.5-lts.1",
+    "@vercel/blob": "^0.23.4"
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
