@@ -1,13 +1,16 @@
 <script>
-const padId = window.location.pathname.split('/').pop();
-let saveTimeout, currentPassword = '';
+document.addEventListener("DOMContentLoaded", function () {
 
-document.getElementById('padName').textContent = padId;
+// ------------------ INITIAL VARIABLES ------------------
+const padId = window.location.pathname.split('/').pop() || "default";
+let saveTimeout, currentPassword = "";
 
-// Make every button NOT trigger page reload on mobile
+document.getElementById("padName").textContent = padId;
+
+// Make buttons NOT submit or reload
 document.querySelectorAll("button").forEach(btn => btn.type = "button");
 
-// Elements
+// ------------------ ELEMENTS ------------------
 const landingPage = document.getElementById('landingPage');
 const createPasswordScreen = document.getElementById('createPasswordScreen');
 const enterPasswordScreen = document.getElementById('enterPasswordScreen');
@@ -47,12 +50,12 @@ const infoModal = document.getElementById('infoModal');
 const menuBtn = document.getElementById('menuBtn');
 const closeInfoBtn = document.getElementById('closeInfoBtn');
 
-// Always use dynamic base URL (Render safe)
+// Always use safe origin for Render
 function api(path) {
     return `${window.location.origin}${path}`;
 }
 
-// UI Switching
+// ------------------ UI Navigation ------------------
 function showScreen(screen) {
     landingPage.classList.add('hidden');
     createPasswordScreen.classList.add('hidden');
@@ -65,13 +68,12 @@ function showScreen(screen) {
     if (screen === 'main') mainContent.classList.remove('hidden');
 }
 
-// Navigation buttons
-btnCreateNew.onclick = () => showScreen('create');
-btnEnterExisting.onclick = () => showScreen('enter');
-backFromCreate.onclick = () => showScreen('landing');
-backFromEnter.onclick = () => showScreen('landing');
+btnCreateNew.onclick = () => showScreen("create");
+btnEnterExisting.onclick = () => showScreen("enter");
+backFromCreate.onclick = () => showScreen("landing");
+backFromEnter.onclick = () => showScreen("landing");
 
-// CREATE PASSWORD
+// ------------------ CREATE PASSWORD ------------------
 submitCreate.onclick = async () => {
     const p1 = createPasswordInput.value.trim();
     const p2 = confirmPasswordInput.value.trim();
@@ -91,13 +93,15 @@ submitCreate.onclick = async () => {
         });
 
         const data = await res.json();
-        if (!data.success) {
-            showError(createError, data.error || "Failed to create pad");
-        } else {
+
+        if (data.success) {
             currentPassword = p1;
             showScreen("main");
             loadPad();
+        } else {
+            showError(createError, data.error || "Failed to create pad");
         }
+
     } catch {
         showError(createError, "Connection error");
     }
@@ -106,7 +110,7 @@ submitCreate.onclick = async () => {
     submitCreate.textContent = "Create & Start Using";
 };
 
-// ENTER PASSWORD
+// ------------------ ENTER PASSWORD ------------------
 submitEnter.onclick = async () => {
     const password = enterPasswordInput.value.trim();
     if (!password) return showError(enterError, "Enter your password");
@@ -122,6 +126,7 @@ submitEnter.onclick = async () => {
         });
 
         const data = await res.json();
+
         if (data.success) {
             currentPassword = password;
             showScreen("main");
@@ -138,14 +143,22 @@ submitEnter.onclick = async () => {
     submitEnter.textContent = "Access My Pad";
 };
 
-// Generic error
+// ------------------ ERROR HELPERS ------------------
 function showError(el, msg) {
     el.textContent = msg;
     el.classList.remove("hidden");
     setTimeout(() => el.classList.add("hidden"), 3000);
 }
 
-// LOAD PAD CONTENT
+function showErrorMain(msg) {
+    errorContainer.innerHTML = `<div class="error">${msg}</div>`;
+}
+
+function clearErrorMain() {
+    errorContainer.innerHTML = "";
+}
+
+// ------------------ LOAD PAD ------------------
 async function loadPad() {
     try {
         const res = await fetch(api(`/api/pad/${padId}/get`), {
@@ -158,11 +171,11 @@ async function loadPad() {
         editor.value = data.content || "";
         renderFiles(data.files || []);
     } catch {
-        showErrorMain("Failed to load content");
+        showErrorMain("Failed to load pad");
     }
 }
 
-// AUTO SAVE
+// ------------------ AUTO SAVE ------------------
 editor.oninput = () => {
     clearTimeout(saveTimeout);
     status.textContent = "Typing...";
@@ -181,18 +194,17 @@ editor.oninput = () => {
     }, 800);
 };
 
-// UPLOAD
+// ------------------ UPLOAD ------------------
 uploadBtn.onclick = () => fileInput.click();
 fileInput.onchange = () => {
     if (fileInput.files.length > 0) uploadFile(fileInput.files[0]);
 };
 
-// Upload function
 async function uploadFile(file) {
     clearErrorMain();
 
     if (file.size > 10 * 1024 * 1024)
-        return showErrorMain("Max size 10MB");
+        return showErrorMain("File too large (max 10MB)");
 
     const form = new FormData();
     form.append("file", file);
@@ -215,10 +227,10 @@ async function uploadFile(file) {
     uploadBtn.textContent = "Choose File";
 }
 
-// FILE LIST
+// ------------------ FILE LIST ------------------
 function renderFiles(files) {
     if (files.length === 0) {
-        filesList.innerHTML = "<div class='empty-state'>No files</div>";
+        filesList.innerHTML = `<div class="empty-state">No files yet</div>`;
         return;
     }
 
@@ -229,13 +241,13 @@ function renderFiles(files) {
                 <div class="file-meta">${file.size} bytes</div>
             </div>
             <div class="file-actions">
-                <button class="download-btn" onclick="downloadFile('${file.id}','${file.name}')">Download</button>
+                <button class="download-btn" onclick="downloadFile('${file.id}','${file.name}')">⬇ Download</button>
             </div>
         </div>
     `).join("");
 }
 
-// DOWNLOAD
+// ------------------ DOWNLOAD ------------------
 async function downloadFile(id, name) {
     try {
         const res = await fetch(api(`/files/${padId}/${id}`), {
@@ -256,15 +268,10 @@ async function downloadFile(id, name) {
     }
 }
 
-function showErrorMain(msg) {
-    errorContainer.innerHTML = `<div class='error'>${msg}</div>`;
-}
-function clearErrorMain() {
-    errorContainer.innerHTML = "";
-}
-
-// Info modal
+// ------------------ INFO MODAL ------------------
 menuBtn.onclick = () => infoModal.classList.add("active");
 closeInfoBtn.onclick = () => infoModal.classList.remove("active");
 infoModal.onclick = e => { if (e.target === infoModal) infoModal.classList.remove("active"); };
+
+}); // END OF DOMContentLoaded
 </script>
