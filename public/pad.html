@@ -1,277 +1,509 @@
-<script>
-document.addEventListener("DOMContentLoaded", function () {
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pad - Simple Notes</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f5f5; min-height: 100vh; display: flex; flex-direction: column; }
+    .header { background: #fff; padding: 1rem 2rem; box-shadow: 0 2px 4px rgba(0,0,0,0.1); display: flex; justify-content: space-between; align-items: center; }
+    .header h1 { font-size: 1.5rem; color: #333; }
+    .pad-name { color: #666; font-size: 0.9rem; }
+    .landing-page { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .landing-box { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 3rem; max-width: 500px; width: 100%; }
+    .landing-box h2 { text-align: center; margin-bottom: 0.5rem; color: #333; font-size: 1.8rem; }
+    .landing-box p { text-align: center; color: #666; margin-bottom: 2.5rem; font-size: 0.95rem; line-height: 1.5; }
+    .action-buttons { display: flex; flex-direction: column; gap: 1rem; }
+    .action-btn { padding: 1.25rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: 600; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem; flex-direction: column; }
+    .create-btn { background: #4CAF50; color: white; }
+    .create-btn:hover { background: #45a049; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3); }
+    .enter-btn { background: #2196F3; color: white; }
+    .enter-btn:hover { background: #1976D2; transform: translateY(-2px); box-shadow: 0 4px 12px rgba(33, 150, 243, 0.3); }
+    .password-screen { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .password-box { background: #fff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); padding: 3rem; max-width: 450px; width: 100%; }
+    .password-box h2 { text-align: center; margin-bottom: 0.5rem; color: #333; }
+    .password-box p { text-align: center; color: #666; margin-bottom: 2rem; font-size: 0.9rem; line-height: 1.5; }
+    .form-group { margin-bottom: 1.5rem; }
+    .form-group label { display: block; margin-bottom: 0.5rem; color: #555; font-weight: 500; }
+    .form-group input { width: 100%; padding: 0.75rem; border: 2px solid #ddd; border-radius: 6px; font-size: 1rem; transition: border-color 0.3s; }
+    .form-group input:focus { outline: none; border-color: #4CAF50; }
+    .submit-btn { width: 100%; background: #4CAF50; color: white; border: none; padding: 1rem; border-radius: 6px; font-size: 1rem; cursor: pointer; transition: background 0.3s; font-weight: 500; }
+    .submit-btn:hover { background: #45a049; }
+    .submit-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .back-btn { width: 100%; background: #757575; color: white; border: none; padding: 0.75rem; border-radius: 6px; font-size: 0.9rem; cursor: pointer; margin-top: 1rem; transition: background 0.3s; }
+    .back-btn:hover { background: #616161; }
+    .error-msg { background: #ffebee; color: #c62828; padding: 0.75rem; border-radius: 6px; margin-top: 1rem; font-size: 0.9rem; text-align: center; }
+    .hidden { display: none !important; }
+    .container { flex: 1; max-width: 1200px; width: 100%; margin: 0 auto; padding: 2rem; display: flex; flex-direction: column; gap: 1.5rem; }
+    .editor-section { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1.5rem; flex: 1; display: flex; flex-direction: column; }
+    textarea { flex: 1; border: none; outline: none; font-family: 'Courier New', monospace; font-size: 14px; resize: none; padding: 1rem; background: #fafafa; border-radius: 4px; min-height: 400px; }
+    .status { margin-top: 0.5rem; font-size: 0.85rem; color: #666; }
+    .files-section { background: #fff; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); padding: 1.5rem; }
+    .files-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+    h2 { font-size: 1.2rem; color: #333; }
+    .upload-area { border: 2px dashed #ddd; border-radius: 8px; padding: 2rem; text-align: center; cursor: pointer; transition: all 0.3s; margin-bottom: 1rem; }
+    .upload-area:hover, .upload-area.drag-over { border-color: #4CAF50; background: #f0f8f0; }
+    .upload-btn { background: #4CAF50; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 4px; cursor: pointer; font-size: 1rem; transition: background 0.3s; }
+    .upload-btn:hover { background: #45a049; }
+    .upload-btn:disabled { background: #ccc; cursor: not-allowed; }
+    .file-input { display: none; }
+    .files-list { display: flex; flex-direction: column; gap: 0.75rem; }
+    .file-item { display: flex; justify-content: space-between; align-items: center; padding: 1rem; background: #f9f9f9; border-radius: 6px; border: 1px solid #e0e0e0; }
+    .file-info { display: flex; flex-direction: column; gap: 0.25rem; flex: 1; }
+    .file-name { font-weight: 500; color: #333; }
+    .file-meta { font-size: 0.85rem; color: #666; }
+    .file-actions { display: flex; gap: 0.5rem; }
+    .download-btn, .preview-btn { background: #2196F3; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; text-decoration: none; font-size: 0.9rem; transition: background 0.3s; }
+    .download-btn:hover, .preview-btn:hover { background: #1976D2; }
+    .preview-btn { background: #9C27B0; }
+    .preview-btn:hover { background: #7B1FA2; }
+    .error { background: #ffebee; color: #c62828; padding: 1rem; border-radius: 4px; margin-top: 1rem; }
+    .info { background: #e3f2fd; color: #1565c0; padding: 0.75rem; border-radius: 4px; font-size: 0.9rem; margin-top: 1rem; }
+    .empty-state { text-align: center; color: #999; padding: 2rem; }
+    .preview-modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 1000; overflow: auto; }
+    .preview-modal.active { display: flex; align-items: center; justify-content: center; padding: 2rem; }
+    .preview-content { background: #fff; border-radius: 8px; max-width: 90%; max-height: 90%; position: relative; overflow: auto; }
+    .preview-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; border-bottom: 1px solid #e0e0e0; background: #f5f5f5; border-radius: 8px 8px 0 0; }
+    .preview-title { font-weight: 500; color: #333; }
+    .close-btn { background: #f44336; color: white; border: none; padding: 0.5rem 1rem; border-radius: 4px; cursor: pointer; font-size: 0.9rem; }
+    .close-btn:hover { background: #d32f2f; }
+    .preview-body { padding: 2rem; overflow: auto; max-height: calc(90vh - 80px); }
+    .preview-body img { max-width: 100%; height: auto; display: block; margin: 0 auto; }
+    .preview-body iframe { width: 100%; height: 80vh; border: none; }
+    .menu-btn { background: transparent; border: none; padding: 0.5rem; cursor: pointer; display: flex; flex-direction: column; gap: 4px; transition: all 0.3s; }
+    .menu-btn:hover { opacity: 0.7; }
+    .hamburger { width: 24px; height: 3px; background: #333; border-radius: 2px; transition: all 0.3s; }
+    .info-modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 2000; overflow-y: auto; padding: 2rem; }
+    .info-modal.active { display: flex; align-items: center; justify-content: center; }
+    .info-content { background: #fff; border-radius: 12px; max-width: 700px; width: 100%; max-height: 90vh; overflow-y: auto; }
+    .info-header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 2rem; border-radius: 12px 12px 0 0; text-align: center; position: relative; }
+    .info-header h2 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .info-header p { opacity: 0.9; font-size: 1.1rem; }
+    .profile-photo { width: 150px; height: 150px; border-radius: 50%; border: 5px solid white; margin: 1rem auto 0; display: block; object-fit: cover; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
+    .info-body { padding: 2rem; }
+    .info-section { margin-bottom: 2rem; }
+    .info-section h3 { color: #333; font-size: 1.3rem; margin-bottom: 1rem; padding-bottom: 0.5rem; border-bottom: 2px solid #667eea; }
+    .info-section p { color: #555; line-height: 1.7; margin-bottom: 0.75rem; }
+    .info-list { list-style: none; padding: 0; }
+    .info-list li { padding: 0.5rem 0; color: #555; display: flex; align-items: center; gap: 0.5rem; }
+    .info-list li:before { content: "▸"; color: #667eea; font-weight: bold; }
+    .contact-box { background: #f8f9fa; border-left: 4px solid #667eea; padding: 1.25rem; border-radius: 6px; margin-top: 1rem; }
+    .contact-box strong { color: #333; display: block; margin-bottom: 0.5rem; font-size: 1.05rem; }
+    .contact-box a { color: #667eea; text-decoration: none; font-weight: 500; }
+    .contact-box a:hover { text-decoration: underline; }
+    .report-box { background: #fff3cd; border-left: 4px solid #ffc107; padding: 1.25rem; border-radius: 6px; margin-top: 1rem; }
+    .report-box strong { color: #856404; display: block; margin-bottom: 0.5rem; font-size: 1.05rem; }
+    .close-info-btn { width: 100%; background: #667eea; color: white; border: none; padding: 1rem; border-radius: 8px; font-size: 1rem; cursor: pointer; font-weight: 500; margin-top: 1.5rem; transition: background 0.3s; }
+    .close-info-btn:hover { background: #5568d3; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🔒 Secure Pad</h1>
+    <div style="display: flex; align-items: center; gap: 1rem;">
+      <div class="pad-name">Pad: <span id="padName"></span></div>
+      <button class="menu-btn" id="menuBtn" title="Menu">
+        <span class="hamburger"></span>
+        <span class="hamburger"></span>
+        <span class="hamburger"></span>
+      </button>
+    </div>
+  </div>
+  
+  <div class="landing-page" id="landingPage">
+    <div class="landing-box">
+      <h2>📝 Welcome to Your Pad</h2>
+      <p>Choose an option to get started with your secure notepad</p>
+      <div class="action-buttons">
+        <button class="action-btn create-btn" id="btnCreateNew">
+          <span style="font-size: 1.3rem;">🆕 Create New Password</span>
+          <small style="font-weight: normal; font-size: 0.85rem;">Set up a new pad with password protection</small>
+        </button>
+        <button class="action-btn enter-btn" id="btnEnterExisting">
+          <span style="font-size: 1.3rem;">🔐 Enter Existing Password</span>
+          <small style="font-weight: normal; font-size: 0.85rem;">Access your previously created pad</small>
+        </button>
+      </div>
+    </div>
+  </div>
+  
+  <div class="password-screen hidden" id="createPasswordScreen">
+    <div class="password-box">
+      <h2>🆕 Create New Password</h2>
+      <p>Set a password to protect your notes and files. You'll need this password to access your content later.</p>
+      <div class="form-group">
+        <label for="createPasswordInput">Create Password</label>
+        <input type="password" id="createPasswordInput" placeholder="Enter a strong password (min 4 characters)">
+      </div>
+      <div class="form-group">
+        <label for="confirmPasswordInput">Confirm Password</label>
+        <input type="password" id="confirmPasswordInput" placeholder="Re-enter your password">
+      </div>
+      <button class="submit-btn" id="submitCreate">Create & Start Using</button>
+      <button class="back-btn" id="backFromCreate">← Back to Options</button>
+      <div id="createError" class="error-msg hidden"></div>
+    </div>
+  </div>
+  
+  <div class="password-screen hidden" id="enterPasswordScreen">
+    <div class="password-box">
+      <h2>🔐 Enter Your Password</h2>
+      <p>Enter the password you created earlier to access your notes and files.</p>
+      <div class="form-group">
+        <label for="enterPasswordInput">Password</label>
+        <input type="password" id="enterPasswordInput" placeholder="Enter your password">
+      </div>
+      <button class="submit-btn" id="submitEnter">Access My Pad</button>
+      <button class="back-btn" id="backFromEnter">← Back to Options</button>
+      <div id="enterError" class="error-msg hidden"></div>
+    </div>
+  </div>
+  
+  <div class="container hidden" id="mainContent">
+    <div class="editor-section">
+      <textarea id="editor" placeholder="Start typing... Your changes are saved automatically."></textarea>
+      <div class="status" id="status">Ready</div>
+    </div>
+    <div class="files-section">
+      <div class="files-header"><h2>📎 Files</h2></div>
+      <div class="upload-area" id="uploadArea">
+        <p>📤 Drag & drop files here or click to browse</p>
+        <p style="font-size: 0.85rem; color: #666; margin-top: 0.5rem;">Allowed: PDF, JPG, PNG, DOCX | Max: 10MB</p>
+        <input type="file" id="fileInput" class="file-input" accept=".pdf,.jpg,.jpeg,.png,.docx">
+        <button class="upload-btn" id="uploadBtn" style="margin-top: 1rem;">Choose File</button>
+      </div>
+      <div class="info">⏰ Files are automatically deleted after 24 hours | 👁️ Click Preview to view files instantly</div>
+      <div id="errorContainer"></div>
+      <div class="files-list" id="filesList"></div>
+    </div>
+  </div>
 
-// ------------------ INITIAL VARIABLES ------------------
-const padId = window.location.pathname.split('/').pop() || "default";
-let saveTimeout, currentPassword = "";
+  <div class="preview-modal" id="previewModal">
+    <div class="preview-content">
+      <div class="preview-header">
+        <div class="preview-title" id="previewTitle">Preview</div>
+        <button class="close-btn" id="closePreview">✕ Close</button>
+      </div>
+      <div class="preview-body" id="previewBody"></div>
+    </div>
+  </div>
 
-document.getElementById("padName").textContent = padId;
-
-// Make buttons NOT submit or reload
-document.querySelectorAll("button").forEach(btn => btn.type = "button");
-
-// ------------------ ELEMENTS ------------------
-const landingPage = document.getElementById('landingPage');
-const createPasswordScreen = document.getElementById('createPasswordScreen');
-const enterPasswordScreen = document.getElementById('enterPasswordScreen');
-const mainContent = document.getElementById('mainContent');
-
-const btnCreateNew = document.getElementById('btnCreateNew');
-const btnEnterExisting = document.getElementById('btnEnterExisting');
-const backFromCreate = document.getElementById('backFromCreate');
-const backFromEnter = document.getElementById('backFromEnter');
-
-const createPasswordInput = document.getElementById('createPasswordInput');
-const confirmPasswordInput = document.getElementById('confirmPasswordInput');
-const createError = document.getElementById('createError');
-
-const enterPasswordInput = document.getElementById('enterPasswordInput');
-const enterError = document.getElementById('enterError');
-
-const submitCreate = document.getElementById('submitCreate');
-const submitEnter = document.getElementById('submitEnter');
-
-const editor = document.getElementById('editor');
-const status = document.getElementById('status');
-
-const uploadBtn = document.getElementById('uploadBtn');
-const fileInput = document.getElementById('fileInput');
-const uploadArea = document.getElementById('uploadArea');
-
-const filesList = document.getElementById('filesList');
-const errorContainer = document.getElementById('errorContainer');
-
-const previewModal = document.getElementById('previewModal');
-const previewTitle = document.getElementById('previewTitle');
-const previewBody = document.getElementById('previewBody');
-const closePreview = document.getElementById('closePreview');
-
-const infoModal = document.getElementById('infoModal');
-const menuBtn = document.getElementById('menuBtn');
-const closeInfoBtn = document.getElementById('closeInfoBtn');
-
-// Always use safe origin for Render
-function api(path) {
-    return `${window.location.origin}${path}`;
-}
-
-// ------------------ UI Navigation ------------------
-function showScreen(screen) {
-    landingPage.classList.add('hidden');
-    createPasswordScreen.classList.add('hidden');
-    enterPasswordScreen.classList.add('hidden');
-    mainContent.classList.add('hidden');
-
-    if (screen === 'landing') landingPage.classList.remove('hidden');
-    if (screen === 'create') { createPasswordScreen.classList.remove('hidden'); createPasswordInput.focus(); }
-    if (screen === 'enter') { enterPasswordScreen.classList.remove('hidden'); enterPasswordInput.focus(); }
-    if (screen === 'main') mainContent.classList.remove('hidden');
-}
-
-btnCreateNew.onclick = () => showScreen("create");
-btnEnterExisting.onclick = () => showScreen("enter");
-backFromCreate.onclick = () => showScreen("landing");
-backFromEnter.onclick = () => showScreen("landing");
-
-// ------------------ CREATE PASSWORD ------------------
-submitCreate.onclick = async () => {
-    const p1 = createPasswordInput.value.trim();
-    const p2 = confirmPasswordInput.value.trim();
-
-    if (!p1) return showError(createError, "Please enter a password");
-    if (p1.length < 4) return showError(createError, "Password must be at least 4 characters");
-    if (p1 !== p2) return showError(createError, "Passwords do not match");
-
-    submitCreate.disabled = true;
-    submitCreate.textContent = "Creating...";
-
-    try {
-        const res = await fetch(api(`/api/pad/${padId}/create`), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: p1 })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            currentPassword = p1;
-            showScreen("main");
-            loadPad();
-        } else {
-            showError(createError, data.error || "Failed to create pad");
-        }
-
-    } catch {
-        showError(createError, "Connection error");
-    }
-
-    submitCreate.disabled = false;
-    submitCreate.textContent = "Create & Start Using";
-};
-
-// ------------------ ENTER PASSWORD ------------------
-submitEnter.onclick = async () => {
-    const password = enterPasswordInput.value.trim();
-    if (!password) return showError(enterError, "Enter your password");
-
-    submitEnter.disabled = true;
-    submitEnter.textContent = "Verifying...";
-
-    try {
-        const res = await fetch(api(`/api/pad/${padId}/verify`), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password })
-        });
-
-        const data = await res.json();
-
-        if (data.success) {
-            currentPassword = password;
-            showScreen("main");
-            loadPad();
-        } else {
-            showError(enterError, "Incorrect password");
-        }
-
-    } catch {
-        showError(enterError, "Connection error");
-    }
-
-    submitEnter.disabled = false;
-    submitEnter.textContent = "Access My Pad";
-};
-
-// ------------------ ERROR HELPERS ------------------
-function showError(el, msg) {
-    el.textContent = msg;
-    el.classList.remove("hidden");
-    setTimeout(() => el.classList.add("hidden"), 3000);
-}
-
-function showErrorMain(msg) {
-    errorContainer.innerHTML = `<div class="error">${msg}</div>`;
-}
-
-function clearErrorMain() {
-    errorContainer.innerHTML = "";
-}
-
-// ------------------ LOAD PAD ------------------
-async function loadPad() {
-    try {
-        const res = await fetch(api(`/api/pad/${padId}/get`), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: currentPassword })
-        });
-
-        const data = await res.json();
-        editor.value = data.content || "";
-        renderFiles(data.files || []);
-    } catch {
-        showErrorMain("Failed to load pad");
-    }
-}
-
-// ------------------ AUTO SAVE ------------------
-editor.oninput = () => {
-    clearTimeout(saveTimeout);
-    status.textContent = "Typing...";
-
-    saveTimeout = setTimeout(async () => {
-        try {
-            await fetch(api(`/api/pad/${padId}/save`), {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ password: currentPassword, content: editor.value })
-            });
-            status.textContent = "Saved ✓";
-        } catch {
-            status.textContent = "Save failed";
-        }
-    }, 800);
-};
-
-// ------------------ UPLOAD ------------------
-uploadBtn.onclick = () => fileInput.click();
-fileInput.onchange = () => {
-    if (fileInput.files.length > 0) uploadFile(fileInput.files[0]);
-};
-
-async function uploadFile(file) {
-    clearErrorMain();
-
-    if (file.size > 10 * 1024 * 1024)
-        return showErrorMain("File too large (max 10MB)");
-
-    const form = new FormData();
-    form.append("file", file);
-    form.append("password", currentPassword);
-
-    uploadBtn.disabled = true;
-    uploadBtn.textContent = "Uploading...";
-
-    try {
-        const res = await fetch(api(`/api/upload/${padId}`), { method: "POST", body: form });
-        const data = await res.json();
-
-        if (!res.ok) throw new Error(data.error);
-        loadPad();
-    } catch (err) {
-        showErrorMain(err.message);
-    }
-
-    uploadBtn.disabled = false;
-    uploadBtn.textContent = "Choose File";
-}
-
-// ------------------ FILE LIST ------------------
-function renderFiles(files) {
-    if (files.length === 0) {
-        filesList.innerHTML = `<div class="empty-state">No files yet</div>`;
-        return;
-    }
-
-    filesList.innerHTML = files.map(file => `
-        <div class="file-item">
-            <div class="file-info">
-                <div class="file-name">${file.name}</div>
-                <div class="file-meta">${file.size} bytes</div>
-            </div>
-            <div class="file-actions">
-                <button class="download-btn" onclick="downloadFile('${file.id}','${file.name}')">⬇ Download</button>
-            </div>
+  <!-- Info/About Modal -->
+  <div class="info-modal" id="infoModal">
+    <div class="info-content">
+      <div class="info-header">
+        <h2>👨‍💻 About the Developer</h2>
+        <p>Engineering Student & Aspiring Developer</p>
+        <!-- Replace the src with your photo URL -->
+      <img src="/sathvik_profile.jpg" alt="T S Sathvik Hegade" class="profile-photo" id="profilePhoto">
+      </div>
+      <div class="info-body">
+        <div class="info-section">
+          <h3>📋 Profile</h3>
+          <p><strong>Name:</strong> T S Sathvik Hegade</p>
+          <p><strong>Role:</strong> Engineering Student, Aspiring Developer</p>
+          <p><strong>Institution:</strong> BMS Institute of Technology and Management</p>
         </div>
-    `).join("");
-}
 
-// ------------------ DOWNLOAD ------------------
-async function downloadFile(id, name) {
-    try {
-        const res = await fetch(api(`/files/${padId}/${id}`), {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ password: currentPassword })
+        <div class="info-section">
+          <h3>💻 Technical Skills</h3>
+          <ul class="info-list">
+            <li>Machine Learning (ML)</li>
+            <li>Deep Learning (DL)</li>
+            <li>C++ Programming</li>
+            <li>Python Programming</li>
+          </ul>
+        </div>
+
+        <div class="info-section">
+          <h3>🎯 Future Goals</h3>
+          <p>Dedicated to advancing expertise in Machine Learning, Deep Learning, and comprehensive software development. Committed to building innovative solutions and contributing to cutting-edge technology projects.</p>
+        </div>
+
+        <div class="info-section">
+          <h3>📧 Contact Information</h3>
+          <div class="contact-box">
+            <strong>Email:</strong>
+            <a href="mailto:sathvikhegade3@gmail.com">sathvikhegade3@gmail.com</a>
+          </div>
+        </div>
+
+        <div class="info-section">
+          <h3>📢 Report Section</h3>
+          <div class="report-box">
+            <strong>⚠️ Important Notice</strong>
+            <p style="margin: 0; color: #856404; line-height: 1.6;">
+              For any inquiries, feedback, bug reports, or professional communication regarding this application, candidates and users are requested to contact the developer directly via email at:
+              <a href="mailto:sathvikhegade3@gmail.com" style="color: #856404; font-weight: 600;">sathvikhegade3@gmail.com</a>
+            </p>
+          </div>
+        </div>
+
+        <button class="close-info-btn" id="closeInfoBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const padId = window.location.pathname.split('/').pop() || 'default';
+    let saveTimeout, currentPassword = '';
+    document.getElementById('padName').textContent = padId;
+    
+    const landingPage = document.getElementById('landingPage');
+    const createPasswordScreen = document.getElementById('createPasswordScreen');
+    const enterPasswordScreen = document.getElementById('enterPasswordScreen');
+    const mainContent = document.getElementById('mainContent');
+    const btnCreateNew = document.getElementById('btnCreateNew');
+    const btnEnterExisting = document.getElementById('btnEnterExisting');
+    const createPasswordInput = document.getElementById('createPasswordInput');
+    const confirmPasswordInput = document.getElementById('confirmPasswordInput');
+    const submitCreate = document.getElementById('submitCreate');
+    const backFromCreate = document.getElementById('backFromCreate');
+    const createError = document.getElementById('createError');
+    const enterPasswordInput = document.getElementById('enterPasswordInput');
+    const submitEnter = document.getElementById('submitEnter');
+    const backFromEnter = document.getElementById('backFromEnter');
+    const enterError = document.getElementById('enterError');
+    const editor = document.getElementById('editor');
+    const status = document.getElementById('status');
+    const uploadArea = document.getElementById('uploadArea');
+    const fileInput = document.getElementById('fileInput');
+    const uploadBtn = document.getElementById('uploadBtn');
+    const filesList = document.getElementById('filesList');
+    const errorContainer = document.getElementById('errorContainer');
+    const previewModal = document.getElementById('previewModal');
+    const previewTitle = document.getElementById('previewTitle');
+    const previewBody = document.getElementById('previewBody');
+    const closePreview = document.getElementById('closePreview');
+    const menuBtn = document.getElementById('menuBtn');
+    const infoModal = document.getElementById('infoModal');
+    const closeInfoBtn = document.getElementById('closeInfoBtn');
+    
+    async function checkPadExists() {
+      // Both buttons are always enabled - user can choose to create new or enter existing
+    }
+    
+    btnCreateNew.addEventListener('click', () => showScreen('create'));
+    btnEnterExisting.addEventListener('click', () => showScreen('enter'));
+    backFromCreate.addEventListener('click', () => showScreen('landing'));
+    backFromEnter.addEventListener('click', () => showScreen('landing'));
+    
+    function showScreen(screen) {
+      landingPage.classList.add('hidden');
+      createPasswordScreen.classList.add('hidden');
+      enterPasswordScreen.classList.add('hidden');
+      mainContent.classList.add('hidden');
+      if (screen === 'landing') landingPage.classList.remove('hidden');
+      else if (screen === 'create') { createPasswordScreen.classList.remove('hidden'); createPasswordInput.focus(); }
+      else if (screen === 'enter') { enterPasswordScreen.classList.remove('hidden'); enterPasswordInput.focus(); }
+      else if (screen === 'main') mainContent.classList.remove('hidden');
+    }
+    
+    submitCreate.addEventListener('click', handleCreatePassword);
+    createPasswordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') confirmPasswordInput.focus(); });
+    confirmPasswordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleCreatePassword(); });
+    
+    async function handleCreatePassword() {
+      const password = createPasswordInput.value.trim();
+      const confirmPassword = confirmPasswordInput.value.trim();
+      if (!password) { showError(createError, 'Please enter a password'); return; }
+      if (password.length < 4) { showError(createError, 'Password must be at least 4 characters'); return; }
+      if (!confirmPassword) { showError(createError, 'Please confirm your password'); return; }
+      if (password !== confirmPassword) { showError(createError, '❌ Passwords do not match'); return; }
+      submitCreate.disabled = true;
+      submitCreate.textContent = 'Creating...';
+      try {
+        const res = await fetch(`/api/pad/${padId}/create`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
         });
-
+        const data = await res.json();
+        if (data.success) {
+          currentPassword = password;
+          showScreen('main');
+          loadPad();
+        } else {
+          showError(createError, data.error || 'Failed to create pad');
+        }
+      } catch (error) {
+        showError(createError, '⚠️ Connection error. Please try again.');
+      } finally {
+        submitCreate.disabled = false;
+        submitCreate.textContent = 'Create & Start Using';
+      }
+    }
+    
+    submitEnter.addEventListener('click', handleEnterPassword);
+    enterPasswordInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') handleEnterPassword(); });
+    
+    async function handleEnterPassword() {
+      const password = enterPasswordInput.value.trim();
+      if (!password) { showError(enterError, 'Please enter your password'); return; }
+      submitEnter.disabled = true;
+      submitEnter.textContent = 'Verifying...';
+      try {
+        const res = await fetch(`/api/pad/${padId}/verify`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password })
+        });
+        const data = await res.json();
+        if (data.success) {
+          currentPassword = password;
+          showScreen('main');
+          loadPad();
+        } else {
+          showError(enterError, '❌ Incorrect password');
+        }
+      } catch (error) {
+        showError(enterError, '⚠️ Connection error. Please try again.');
+      } finally {
+        submitEnter.disabled = false;
+        submitEnter.textContent = 'Access My Pad';
+      }
+    }
+    
+    function showError(element, message) {
+      element.textContent = message;
+      element.classList.remove('hidden');
+      setTimeout(() => { element.classList.add('hidden'); }, 4000);
+    }
+    
+    async function loadPad() {
+      try {
+        const res = await fetch(`/api/pad/${padId}/get`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: currentPassword })
+        });
+        const data = await res.json();
+        editor.value = data.content || '';
+        renderFiles(data.files || []);
+      } catch (error) {
+        showErrorMain('Failed to load pad');
+      }
+    }
+    
+    editor.addEventListener('input', () => {
+      clearTimeout(saveTimeout);
+      status.textContent = 'Typing...';
+      saveTimeout = setTimeout(async () => {
+        try {
+          await fetch(`/api/pad/${padId}/save`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ password: currentPassword, content: editor.value })
+          });
+          status.textContent = 'Saved ✓';
+          setTimeout(() => status.textContent = 'Ready', 2000);
+        } catch (error) {
+          status.textContent = 'Save failed ✗';
+        }
+      }, 1000);
+    });
+    
+    uploadBtn.addEventListener('click', () => fileInput.click());
+    fileInput.addEventListener('change', (e) => { if (e.target.files.length > 0) uploadFile(e.target.files[0]); });
+    uploadArea.addEventListener('dragover', (e) => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+    uploadArea.addEventListener('dragleave', () => { uploadArea.classList.remove('drag-over'); });
+    uploadArea.addEventListener('drop', (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove('drag-over');
+      if (e.dataTransfer.files.length > 0) uploadFile(e.dataTransfer.files[0]);
+    });
+    
+    async function uploadFile(file) {
+      clearErrorMain();
+      if (file.size > 10 * 1024 * 1024) { showErrorMain('File too large. Maximum size is 10MB.'); return; }
+      const ext = file.name.split('.').pop().toLowerCase();
+      if (!['pdf', 'jpg', 'jpeg', 'png', 'docx'].includes(ext)) { showErrorMain('Invalid file type. Allowed: PDF, JPG, PNG, DOCX'); return; }
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('password', currentPassword);
+      uploadBtn.disabled = true;
+      uploadBtn.textContent = 'Uploading...';
+      try {
+        const res = await fetch(`/api/upload/${padId}`, { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        fileInput.value = '';
+        loadPad();
+      } catch (error) {
+        showErrorMain(error.message);
+      } finally {
+        uploadBtn.disabled = false;
+        uploadBtn.textContent = 'Choose File';
+      }
+    }
+    
+    async function previewFile(file) {
+      const ext = file.name.split('.').pop().toLowerCase();
+      previewTitle.textContent = file.name;
+      previewBody.innerHTML = '';
+      if (ext === 'jpg' || ext === 'jpeg' || ext === 'png') {
+        const res = await fetch(`/files/${padId}/${file.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: currentPassword }) });
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
-
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = name;
-        a.click();
-    } catch {
-        showErrorMain("Download failed");
+        const img = document.createElement('img');
+        img.src = url;
+        img.alt = file.name;
+        previewBody.appendChild(img);
+      } else if (ext === 'pdf') {
+        const res = await fetch(`/files/${padId}/${file.id}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: currentPassword }) });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const iframe = document.createElement('iframe');
+        iframe.src = url;
+        previewBody.appendChild(iframe);
+      } else if (ext === 'docx') {
+        previewBody.innerHTML = `<div style="text-align: center; padding: 3rem;"><h3>📄 ${escapeHtml(file.name)}</h3><p style="margin-top: 1rem; color: #666;">DOCX files cannot be previewed in browser.<br>Please download to view the content.</p><button onclick="downloadFile('${file.id}', '${escapeHtml(file.name)}')" class="download-btn" style="display: inline-block; margin-top: 1.5rem;">Download File</button></div>`;
+      }
+      previewModal.classList.add('active');
     }
-}
-
-// ------------------ INFO MODAL ------------------
-menuBtn.onclick = () => infoModal.classList.add("active");
-closeInfoBtn.onclick = () => infoModal.classList.remove("active");
-infoModal.onclick = e => { if (e.target === infoModal) infoModal.classList.remove("active"); };
-
-}); // END OF DOMContentLoaded
-</script>
+    
+    async function downloadFile(fileId, fileName) {
+      try {
+        const res = await fetch(`/files/${padId}/${fileId}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ password: currentPassword }) });
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        a.click();
+      } catch (error) {
+        showErrorMain('Download failed');
+      }
+    }
+    
+    closePreview.addEventListener('click', () => { previewModal.classList.remove('active'); previewBody.innerHTML = ''; });
+    previewModal.addEventListener('click', (e) => { if (e.target === previewModal) { previewModal.classList.remove('active'); previewBody.innerHTML = ''; } });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && previewModal.classList.contains('active')) { previewModal.classList.remove('active'); previewBody.innerHTML = ''; } });
+    
+    function renderFiles(files) {
+      if (files.length === 0) { filesList.innerHTML = '<div class="empty-state">No files uploaded yet</div>'; return; }
+      filesList.innerHTML = files.map(file => {
+        const uploadDate = new Date(file.uploadedAt).toLocaleString();
+        const expiresDate = new Date(file.expiresAt).toLocaleString();
+        const size = formatFileSize(file.size);
+        const ext = file.name.split('.').pop().toLowerCase();
+        const canPreview = ['pdf', 'jpg', 'jpeg', 'png'].includes(ext);
+        return `<div class="file-item"><div class="file-info"><div class="file-name">${escapeHtml(file.name)}</div><div class="file-meta">${size} • Uploaded: ${uploadDate} • Expires: ${expiresDate}</div></div><div class="file-actions">${canPreview ? `<button class="preview-btn" onclick='previewFile(${JSON.stringify(file)})'>👁️ Preview</button>` : ''}<button class="download-btn" onclick="downloadFile('${file.id}', '${escapeHtml(file.name)}')">⬇️ Download</button></div></div>`;
+      }).join('');
+    }
+    
+    function formatFileSize(bytes) { if (bytes < 1024) return bytes + ' B'; if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'; return (bytes / (1024 * 1024)).toFixed(1) + ' MB'; }
+    function escapeHtml(text) { const div = document.createElement('div'); div.textContent = text; return div.innerHTML; }
+    function showErrorMain(message) { errorContainer.innerHTML = `<div class="error">${escapeHtml(message)}</div>`; }
+    function clearErrorMain() { errorContainer.innerHTML = ''; }
+    
+    // Info modal handlers
+    menuBtn.addEventListener('click', () => { infoModal.classList.add('active'); });
+    closeInfoBtn.addEventListener('click', () => { infoModal.classList.remove('active'); });
+    infoModal.addEventListener('click', (e) => { if (e.target === infoModal) infoModal.classList.remove('active'); });
+    
+    checkPadExists();
+  </script>
+</body>
+</html>
